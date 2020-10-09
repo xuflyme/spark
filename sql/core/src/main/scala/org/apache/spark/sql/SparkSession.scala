@@ -607,8 +607,10 @@ class SparkSession private(
   def sql(sqlText: String): DataFrame = withActive {
     val tracker = new QueryPlanningTracker
     val plan = tracker.measurePhase(QueryPlanningTracker.PARSING) {
+      // parsePlan的具体实现在AbstractSqlParser类
       sessionState.sqlParser.parsePlan(sqlText)
     }
+    // parser生成逻辑执行计划后，使用analyzer将逻辑执行计划进行分析
     Dataset.ofRows(self, plan, tracker)
   }
 

@@ -95,6 +95,9 @@ private[sql] object Dataset {
   /** A variant of ofRows that allows passing in a tracker so we can track query parsing time. */
   def ofRows(sparkSession: SparkSession, logicalPlan: LogicalPlan, tracker: QueryPlanningTracker)
     : DataFrame = sparkSession.withActive {
+    // QueryExecution中定义了SQL执行的关键步骤
+    // QueryExecution类中的成员都是lazy的，被调用时才会执行。只有等到程序中出现action算子时，
+    // 才会调用 queryExecution类中的executedPlan成员，原先生成的逻辑执行计划才会被优化器优化，并转换成物理执行计划真正的被系统调用执行　　　
     val qe = new QueryExecution(sparkSession, logicalPlan, tracker)
     qe.assertAnalyzed()
     new Dataset[Row](qe, RowEncoder(qe.analyzed.schema))

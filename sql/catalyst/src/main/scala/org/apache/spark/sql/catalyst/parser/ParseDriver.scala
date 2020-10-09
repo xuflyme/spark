@@ -78,7 +78,8 @@ abstract class AbstractSqlParser(conf: SQLConf) extends ParserInterface with Log
   }
 
   /** Creates LogicalPlan for a given SQL string. */
-  override def parsePlan(sqlText: String): LogicalPlan = parse(sqlText) { parser =>
+  override def parsePlan(sqlText: String): LogicalPlan = parse(sqlText) { parser =>  // 主函数parse
+    // 使用AstBuilder（AstBuilder.scala）将ANTLR 4语法树结构转换成catalyst表达式，即logical plan
     astBuilder.visitSingleStatement(parser.singleStatement()) match {
       case plan: LogicalPlan => plan
       case _ =>
@@ -92,6 +93,8 @@ abstract class AbstractSqlParser(conf: SQLConf) extends ParserInterface with Log
 
   protected def parse[T](command: String)(toResult: SqlBaseParser => T): T = {
     logDebug(s"Parsing command: $command")
+
+    // 使用ANTLR4对SQL语句进行进行，最后生成 unresolved logic plan
 
     val lexer = new SqlBaseLexer(new UpperCaseCharStream(CharStreams.fromString(command)))
     lexer.removeErrorListeners()
