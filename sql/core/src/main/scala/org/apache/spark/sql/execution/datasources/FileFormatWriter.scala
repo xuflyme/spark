@@ -192,6 +192,7 @@ object FileFormatWriter extends Logging {
 
       val jobIdInstant = new Date().getTime
       val ret = new Array[WriteTaskResult](rddWithNonEmptyPartitions.partitions.length)
+      // 调用SparkContext.runJob执行作业
       sparkSession.sparkContext.runJob(
         rddWithNonEmptyPartitions,
         (taskContext: TaskContext, iter: Iterator[InternalRow]) => {

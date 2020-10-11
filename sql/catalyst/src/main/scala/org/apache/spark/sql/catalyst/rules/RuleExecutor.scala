@@ -180,6 +180,7 @@ abstract class RuleExecutor[TreeType <: TreeNode[_]] extends Logging {
    */
   def executeAndTrack(plan: TreeType, tracker: QueryPlanningTracker): TreeType = {
     QueryPlanningTracker.withTracker(tracker) {
+      // 执行
       execute(plan)
     }
   }
