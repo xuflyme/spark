@@ -64,6 +64,7 @@ abstract class SparkStrategies extends QueryPlanner[SparkPlan] {
   self: SparkPlanner =>
 
   override def plan(plan: LogicalPlan): Iterator[SparkPlan] = {
+    // 应用所有的策略
     super.plan(plan).map { p =>
       val logicalPlan = plan match {
         case ReturnAnswer(rootPlan) => rootPlan

@@ -86,6 +86,8 @@ class QueryExecution(
   lazy val optimizedPlan: LogicalPlan = executePhase(QueryPlanningTracker.OPTIMIZATION) {
     // clone the plan to avoid sharing the plan instance between different stages like analyzing,
     // optimizing and planning.
+    // optimizer是org.apache.spark.sql.execution.SparkOptimizer示例，
+    // 该示例在 org.apache.spark.sql.internal.BaseSessionStateBuilder中初始化
     sparkSession.sessionState.optimizer.executeAndTrack(withCachedData.clone(), tracker)
   }
 
@@ -383,6 +385,8 @@ object QueryExecution {
       plan: LogicalPlan): SparkPlan = {
     // TODO: We use next(), i.e. take the first plan returned by the planner, here for now,
     //       but we will implement to choose the best plan.
+    // planner为SparkPlan对象，其中定义了一系列的执行策略，包括LeftSemiJoin、HashJoin等等，这些策略用来指定实际查询所做的操作
+    // 直接返回多个物理执行plan中的第一个
     planner.plan(ReturnAnswer(plan)).next()
   }
 

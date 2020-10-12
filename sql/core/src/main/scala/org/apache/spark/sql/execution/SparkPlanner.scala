@@ -33,6 +33,7 @@ class SparkPlanner(
 
   def numPartitions: Int = conf.numShufflePartitions
 
+  // 定义的策略
   override def strategies: Seq[Strategy] =
     experimentalMethods.extraStrategies ++
       extraPlanningStrategies ++ (

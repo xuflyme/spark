@@ -214,12 +214,12 @@ class Analyzer(
       new ResolveHints.ResolveCoalesceHints(conf)),
     Batch("Simple Sanity Check", Once,
       LookupFunctions),
-    Batch("Resolution", fixedPoint,
+    Batch("Resolution", fixedPoint,   // 该策略将解析后的逻辑计划里的各个节点转变成resolved节点
       ResolveTableValuedFunctions ::
       ResolveNamespace(catalogManager) ::
       new ResolveCatalogs(catalogManager) ::
       ResolveInsertInto ::
-      ResolveRelations ::
+      ResolveRelations ::    // 调用catalog对象，catalog对象维护了一个tableName，Logical Plan的HashMap结果
       ResolveTables ::
       ResolveReferences ::
       ResolveCreateNamedStruct ::
