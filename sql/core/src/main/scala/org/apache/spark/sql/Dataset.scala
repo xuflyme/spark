@@ -2953,6 +2953,7 @@ class Dataset[T] private[sql](
    * @group action
    * @since 1.6.0
    */
+    // collect Action算子触发整个流程的执行
   def collect(): Array[T] = withAction("collect", queryExecution)(collectFromPlan)
 
   /**
@@ -3675,6 +3676,8 @@ class Dataset[T] private[sql](
   private def withAction[U](name: String, qe: QueryExecution)(action: SparkPlan => U) = {
     SQLExecution.withNewExecutionId(qe, Some(name)) {
       qe.executedPlan.resetMetrics()
+      // 此处的action即为org.apache.spark.sql.Dataset.collectFromPlan，传递的参数是QueryExecution的可执行物理计划
+      // 会触发QueryExecution的lazy变量初始化
       action(qe.executedPlan)
     }
   }
