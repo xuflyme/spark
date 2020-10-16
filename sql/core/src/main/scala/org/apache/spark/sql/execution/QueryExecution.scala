@@ -74,6 +74,7 @@ class QueryExecution(
     sparkSession.sessionState.analyzer.executeAndCheck(logical, tracker)
   }
 
+  // 逐一查询各个LogicalPlan节点的结果是否已经被cached，若是则直接用cached后的结果替换
   lazy val withCachedData: LogicalPlan = sparkSession.withActive {
     assertAnalyzed()
     assertSupported()

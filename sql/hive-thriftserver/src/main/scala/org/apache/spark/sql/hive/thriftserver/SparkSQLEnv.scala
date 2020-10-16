@@ -36,9 +36,11 @@ private[hive] object SparkSQLEnv extends Logging {
 
   def init(): Unit = {
     if (sqlContext == null) {
+      // 初始化sparkconf变量
       val sparkConf = new SparkConf(loadDefaults = true)
       // If user doesn't specify the appName, we want to get [SparkSQL::localHostName] instead of
       // the default appName [SparkSQLCLIDriver] in cli or beeline.
+      // spark app name不能是SparkSQLCLIDriver及HiveThriftServer2类全名
       val maybeAppName = sparkConf
         .getOption("spark.app.name")
         .filterNot(_ == classOf[SparkSQLCLIDriver].getName)
@@ -48,7 +50,7 @@ private[hive] object SparkSQLEnv extends Logging {
         .setAppName(maybeAppName.getOrElse(s"SparkSQL::${Utils.localHostName()}"))
         .set(SQLConf.DATETIME_JAVA8API_ENABLED, true)
 
-
+      // 初始化SparkSession实例
       val sparkSession = SparkSession.builder.config(sparkConf).enableHiveSupport().getOrCreate()
       sparkContext = sparkSession.sparkContext
       sqlContext = sparkSession.sqlContext

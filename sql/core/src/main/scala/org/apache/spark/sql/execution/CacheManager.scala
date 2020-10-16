@@ -217,6 +217,7 @@ class CacheManager extends Logging with AdaptiveSparkPlanHelper {
 
   /** Replaces segments of the given logical plan with cached versions where possible. */
   def useCachedData(plan: LogicalPlan): LogicalPlan = {
+    // 前序遍历树的节点，逐一查询各个LogicalPlan节点的结果是否已经被cached，若是则直接用cached后的结果替换
     val newPlan = plan transformDown {
       case command: IgnoreCachedData => command
 

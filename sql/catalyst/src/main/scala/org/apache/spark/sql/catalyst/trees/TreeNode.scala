@@ -151,6 +151,7 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
    * Faster version of equality which short-circuits when two treeNodes are the same instance.
    * We don't just override Object.equals, as doing so prevents the scala compiler from
    * generating case class `equals` methods
+   * 选择不去重载 Object.equals 方法，以免 Scala 编译器不为 case class 生成该方法
    */
   def fastEquals(other: TreeNode[_]): Boolean = {
     this.eq(other) || this == other
@@ -159,6 +160,7 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
   /**
    * Find the first [[TreeNode]] that satisfies the condition specified by `f`.
    * The condition is recursively applied to this node and all of its children (pre-order).
+   * 从本节点开始，先序遍历整棵树，返回第一个符合 f 命题的节点
    */
   def find(f: BaseType => Boolean): Option[BaseType] = if (f(this)) {
     Some(this)

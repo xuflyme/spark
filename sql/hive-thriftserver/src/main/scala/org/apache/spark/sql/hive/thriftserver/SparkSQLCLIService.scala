@@ -47,8 +47,11 @@ private[hive] class SparkSQLCLIService(hiveServer: HiveServer2, sqlContext: SQLC
   override def init(hiveConf: HiveConf): Unit = {
     setSuperField(this, "hiveConf", hiveConf)
 
+    // 初始化SparkSqlSessionManager
     val sparkSqlSessionManager = new SparkSQLSessionManager(hiveServer, sqlContext)
+    // 反射初始化成员变量
     setSuperField(this, "sessionManager", sparkSqlSessionManager)
+    // 将SparkSqlSessionManager添加到serviceList中
     addService(sparkSqlSessionManager)
     var sparkServiceUGI: UserGroupInformation = null
     var httpUGI: UserGroupInformation = null
@@ -92,6 +95,7 @@ private[hive] class SparkSQLCLIService(hiveServer: HiveServer2, sqlContext: SQLC
       }
     }
 
+    // 初始化sparkSqlSessionManager对象
     initCompositeService(hiveConf)
   }
 
@@ -127,7 +131,13 @@ private[thriftserver] trait ReflectedCompositeService { this: AbstractService =>
 
   def initCompositeService(hiveConf: HiveConf): Unit = {
     // Emulating `CompositeService.init(hiveConf)`
+    // 此处第一次由org.apache.spark.sql.hive.thriftserver.HiveThriftServer2.init方法调用，
+    // 网上回溯父类，拿到org.apache.hive.service.CompositeService.serviceList对象的值，调用其init方法
+    // 第一次调用有两个对象： sparksqlcliservie和thriftCliService
+    //
+    // 第二次由org.apache.spark.sql.hive.thriftserver.SparkSQLCLIService.init调用，初始化sparkSqlSessionManager对象
     val serviceList = getAncestorField[JList[Service]](this, 2, "serviceList")
+    // 调用SparkSQLService.init方法
     serviceList.asScala.foreach(_.init(hiveConf))
 
     // Emulating `AbstractService.init(hiveConf)`
