@@ -40,6 +40,9 @@ private[thriftserver] class SparkSQLOperationManager()
 
   val sessionToContexts = new ConcurrentHashMap[SessionHandle, SQLContext]()
 
+  /**
+   * 在客户端发送 JDBC 请求后被调用
+   */
   override def newExecuteStatementOperation(
       parentSession: HiveSession,
       statement: String,
@@ -50,6 +53,8 @@ private[thriftserver] class SparkSQLOperationManager()
       s" initialized or had already closed.")
     val conf = sqlContext.sessionState.conf
     val runInBackground = async && conf.getConf(HiveUtils.HIVE_THRIFT_SERVER_ASYNC)
+    // 利用 session、statement、conf 相关信息创建一个 SparkExecuteStatementOperation
+    // Spark SQLContext执行SQL的入口
     val operation = new SparkExecuteStatementOperation(
       sqlContext, parentSession, statement, confOverlay, runInBackground)
     handleToOperation.put(operation.getHandle, operation)

@@ -32,7 +32,14 @@ import org.apache.spark.sql.hive.thriftserver.ReflectionUtils._
 import org.apache.spark.sql.hive.thriftserver.server.SparkSQLOperationManager
 import org.apache.spark.sql.internal.SQLConf
 
-
+/**
+ * HiveSession 指的是 Hive ThriftServer 与 Client 之间的 Session，即通常意义上的网络 Session；
+ * 而 SQLContext 指的是 SparkSQL 与 Hive ThriftServer 之间的 Session，
+ * 但 SQLContext 实际存储的只是一系列与 SQL 查询有关的配置参数，和传统意义上的网络 Session 不同
+ *
+ * @param hiveServer
+ * @param sqlContext
+ */
 private[hive] class SparkSQLSessionManager(hiveServer: HiveServer2, sqlContext: SQLContext)
   extends SessionManager(hiveServer)
   with ReflectedCompositeService {
@@ -52,10 +59,12 @@ private[hive] class SparkSQLSessionManager(hiveServer: HiveServer2, sqlContext: 
       sessionConf: java.util.Map[String, String],
       withImpersonation: Boolean,
       delegationToken: String): SessionHandle = {
+    // 利用 SessionManager 创建 HiveSession
     val sessionHandle =
       super.openSession(protocol, username, passwd, ipAddress, sessionConf, withImpersonation,
           delegationToken)
     val session = super.getSession(sessionHandle)
+    // 通知 HiveThriftServer2Listener 有新的 HiveSession 被创建
     HiveThriftServer2.eventManager.onSessionCreated(
       session.getIpAddress, sessionHandle.getSessionId.toString, session.getUsername)
     val ctx = if (sqlContext.conf.hiveThriftServerSingleSession) {
@@ -69,6 +78,7 @@ private[hive] class SparkSQLSessionManager(hiveServer: HiveServer2, sqlContext: 
     setConfMap(ctx, hiveSessionState.getOverriddenConfigurations)
     setConfMap(ctx, hiveSessionState.getHiveVariables)
     if (sessionConf != null && sessionConf.containsKey("use:database")) {
+      // 切换到指定的数据库
       ctx.sql(s"use ${sessionConf.get("use:database")}")
     }
     sparkSqlOperationManager.sessionToContexts.put(sessionHandle, ctx)
@@ -76,9 +86,11 @@ private[hive] class SparkSQLSessionManager(hiveServer: HiveServer2, sqlContext: 
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
+    // 通知 HiveThriftServer2Listener 有 HiveSession 被关闭
     HiveThriftServer2.eventManager.onSessionClosed(sessionHandle.getSessionId.toString)
     val ctx = sparkSqlOperationManager.sessionToContexts.getOrDefault(sessionHandle, sqlContext)
     ctx.sparkSession.sessionState.catalog.getTempViewNames().foreach(ctx.uncacheTable)
+    // 在 HiveContext 中关闭 SQLSession
     super.closeSession(sessionHandle)
     sparkSqlOperationManager.sessionToContexts.remove(sessionHandle)
   }

@@ -257,6 +257,7 @@ private[hive] class SparkExecuteStatementOperation(
     }
   }
 
+  // 执行SQL语句，将结果放入 result 或 resultList 变量并生成对应 iter
   private def execute(): Unit = {
     try {
       synchronized {
@@ -279,11 +280,13 @@ private[hive] class SparkExecuteStatementOperation(
 
       val substitutorStatement = new VariableSubstitution(sqlContext.conf).substitute(statement)
       sqlContext.sparkContext.setJobGroup(statementId, substitutorStatement)
+      // 利用spark的sqlContext执行SQL
       result = sqlContext.sql(statement)
       logDebug(result.queryExecution.toString())
       HiveThriftServer2.eventManager.onStatementParsed(statementId,
         result.queryExecution.toString())
       iter = {
+        // 提取结果 DataFrame 的 Iterator
         if (sqlContext.getConf(SQLConf.THRIFTSERVER_INCREMENTAL_COLLECT.key).toBoolean) {
           resultList = None
           result.toLocalIterator.asScala

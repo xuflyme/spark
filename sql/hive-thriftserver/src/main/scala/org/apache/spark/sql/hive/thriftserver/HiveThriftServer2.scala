@@ -138,13 +138,13 @@ private[hive] class HiveThriftServer2(sqlContext: SQLContext)
   private val started = new AtomicBoolean(false)
 
   override def init(hiveConf: HiveConf): Unit = {
-    // 初始化 SparkSqlCliService
+    // 初始化 SparkSqlCliService，用于执行spark sql
     val sparkSqlCliService = new SparkSQLCLIService(this, sqlContext)
     setSuperField(this, "cliService", sparkSqlCliService)
     // 将sparkSqlCliService加入到serviceList
     addService(sparkSqlCliService)
 
-    // 初始化Thrift的cliService
+    // 初始化Thrift的cliService，用于监控客户端连接，与客户端交互
     val thriftCliService = if (isHTTPTransportMode(hiveConf)) {
       new ThriftHttpCLIService(sparkSqlCliService)
     } else {
