@@ -202,7 +202,7 @@ class Analyzer(
 
   // 定义的规则
   lazy val batches: Seq[Batch] = Seq(
-    Batch("Substitution", fixedPoint,
+    Batch("Substitution", fixedPoint,  // 替换规则
       CTESubstitution,
       WindowsSubstitution,
       EliminateUnions,

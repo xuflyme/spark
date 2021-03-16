@@ -251,6 +251,7 @@ class Dataset[T] private[sql](
 
   // The resolved `ExpressionEncoder` which can be used to turn rows to objects of type T, after
   // collecting rows to the driver side.
+  // 用于将rows转化为T类型的object，拿到rows后，返回到driver端
   private lazy val resolvedEnc = {
     exprEnc.resolveAndBind(logicalPlan.output, sparkSession.sessionState.analyzer)
   }
@@ -2954,6 +2955,7 @@ class Dataset[T] private[sql](
    * @since 1.6.0
    */
     // collect Action算子触发整个流程的执行
+    // withAction为装饰器，用于统计操作的执行时间以及向用户注册的回调函数报告
   def collect(): Array[T] = withAction("collect", queryExecution)(collectFromPlan)
 
   /**
@@ -3687,6 +3689,7 @@ class Dataset[T] private[sql](
    */
   private def collectFromPlan(plan: SparkPlan): Array[T] = {
     val fromRow = resolvedEnc.createDeserializer()
+    // 拿到所有的rows，并转化为执行的T类型的object
     plan.executeCollect().map(fromRow)
   }
 

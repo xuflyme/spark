@@ -239,6 +239,7 @@ abstract class RuleExecutor[TreeType <: TreeNode[_]] extends Logging {
             result
         }
         iteration += 1
+        // 如果达到最大迭代次数
         if (iteration > batch.strategy.maxIterations) {
           // Only log if this is a rule that is supposed to run more than once.
           if (iteration != 2) {
@@ -263,6 +264,7 @@ abstract class RuleExecutor[TreeType <: TreeNode[_]] extends Logging {
           continue = false
         }
 
+        // 经常多次迭代，逻辑计划不再发生变化，达到Fix Point
         if (curPlan.fastEquals(lastPlan)) {
           logTrace(
             s"Fixed point reached for batch ${batch.name} after ${iteration - 1} iterations.")

@@ -55,6 +55,7 @@ public class ThriftHttpCLIService extends ThriftCLIService {
     super(cliService, ThriftHttpCLIService.class.getSimpleName());
   }
 
+  // 该方法启动监听，用于接收client的连接
   @Override
   protected void initializeServer() {
     try {

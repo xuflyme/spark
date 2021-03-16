@@ -313,7 +313,7 @@ abstract class SparkPlan extends QueryPlan[SparkPlan] with Logging with Serializ
    */
   private def getByteArrayRdd(
       n: Int = -1, takeFromEnd: Boolean = false): RDD[(Long, Array[Byte])] = {
-    // 触发SparkPlan的执行，即
+    // 触发SparkPlan的执行，即执行不同的SparkPlan的doExecute()方法
     execute().mapPartitionsInternal { iter =>
       var count = 0
       val buffer = new Array[Byte](4 << 10)  // 4K
@@ -378,11 +378,14 @@ abstract class SparkPlan extends QueryPlan[SparkPlan] with Logging with Serializ
 
   /**
    * Runs this query returning the result as an array.
+   * 执行需求，返回类型为InternalRow类型的数组
    */
   def executeCollect(): Array[InternalRow] = {
+    // 返回RDD类型，下面执行collect拉取数据，触发整个流程的执行
     val byteArrayRdd = getByteArrayRdd()
 
     val results = ArrayBuffer[InternalRow]()
+    // 执行RDD的collect算子，拉取所有的rows数据
     byteArrayRdd.collect().foreach { countAndBytes =>
       decodeUnsafeRows(countAndBytes._2).foreach(results.+=)
     }

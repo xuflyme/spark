@@ -80,6 +80,41 @@ object CurrentOrigin {
 case class TreeNodeTag[T](name: String)
 
 // scalastyle:off
+// 自限定类型的泛型类
+// 1.它是一个泛型类，泛型类型由 BaseType 表示
+// 2.它的泛型类型，必须是TreeNode类的子类
+/**
+ * 自限定泛型类，主要用于封装公共的方法。比如我们有两个类 Apple 和 Banana，它们有个共同的方法，用来创建出新的对象，那么可以把这个方法抽象，作为泛型类的一个方法。
+ * abstract class Fruit<T extends Fruit<T>> {
+ *    // 实例化
+ *    abstract public T make();
+ * }
+ *
+ * class Apple extends Fruit<Apple> {
+ *
+ *    @Override
+ *    public Apple make() {
+ *        return new Apple();
+ *    }
+ * }
+ *
+ * class Banana extends Fruit<Banana> {
+ *    @Override
+ *    public Banana make() {
+ *        return new Banana();
+ *    }
+ * }
+ *
+ *
+ * 继续观察 TreeNode 的声明，发现它还继承了 Product 接口，但是 TreeNode 类并没有实现 Product 的方法，这就需要子类实现。
+ * TreeNode 的子类都是 Case Class 类型，这种类是 scala 独有的语法。使用它有下面几个好处：
+ * 1.子类自动实现 apply 和 unapply 方法。实现了 apply 方法意味着对象实例化不需要 new 关键字，实现 unapply 方法意味着支持模式匹配
+ * 2.子类构造方法的参数，都是 public 权限，意味着可以直接访问
+ * 3.子类自动实现 equals 方法，这个方法用来判断两个对象是否相等
+ * 4.子类自动实现 Product 接口，支持遍历构造方法的参数
+ * TreeNode 的子类实现了 Product 接口，所以支持访问构造方法的参数。TreeNode 类提供了 mapProductIterator 方法，接收一个函数用来遍历这些参数
+ *
+ */
 abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
 // scalastyle:on
   self: BaseType =>
@@ -115,10 +150,13 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
 
   /**
    * Returns a Seq of the children of this node.
-   * Children should not change. Immutability required for containsChild optimization
+   * Children should not change. immutability required for containschild optimization
+   *
+   * 返回该节点的子节点
    */
   def children: Seq[BaseType]
 
+  // 返回子节点的set集合
   lazy val containsChild: Set[TreeNode[_]] = children.toSet
 
   // Copied from Scala 2.13.1
@@ -152,6 +190,7 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
    * We don't just override Object.equals, as doing so prevents the scala compiler from
    * generating case class `equals` methods
    * 选择不去重载 Object.equals 方法，以免 Scala 编译器不为 case class 生成该方法
+   * 首先比较引用，然后调用Case Class实现的equals方法
    */
   def fastEquals(other: TreeNode[_]): Boolean = {
     this.eq(other) || this == other
@@ -238,11 +277,15 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
 
   /**
    * Efficient alternative to `productIterator.map(f).toArray`.
+   * TreeNode 的子类实现了 Product 接口，所以支持访问构造方法的参数。TreeNode 类提供了 mapProductIterator 方法，接收一个函数用来遍历这些参数
    */
   protected def mapProductIterator[B: ClassTag](f: Any => B): Array[B] = {
+
+    // productArity 是属于Product的方法，返回参数的个数
     val arr = Array.ofDim[B](productArity)
     var i = 0
     while (i < arr.length) {
+      // productElement 是属于Product的方法，返回返回指定位置的参数
       arr(i) = f(productElement(i))
       i += 1
     }
@@ -355,11 +398,15 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
 
   /**
    * Returns a copy of this node where `f` has been applied to all the nodes in `children`.
+   *
+   * 遍历子节点
    */
   def mapChildren(f: BaseType => BaseType): BaseType = {
     if (containsChild.nonEmpty) {
+      // 如果子节点非空，即非叶子节点，那么会遍历构造函数的参数。如果参数是子节点，那么递归遍历
       mapChildren(f, forceCopy = false)
     } else {
+      // 如果子节点为空，即叶子节点，则返回自身节点
       this
     }
   }
@@ -368,6 +415,8 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
    * Returns a copy of this node where `f` has been applied to all the nodes in `children`.
    * @param f The transform function to be applied on applicable `TreeNode` elements.
    * @param forceCopy Whether to force making a copy of the nodes even if no child has been changed.
+   *
+   * 遍历子节点
    */
   private def mapChildren(
       f: BaseType => BaseType,
@@ -405,6 +454,8 @@ abstract class TreeNode[BaseType <: TreeNode[BaseType]] extends Product {
       case other => other
     }
 
+    // 调用了mapProductIterator方法，遍历构造函数的参数，返回新的构造参数
+    // 这里只会遍历LogicalPlan的实例，并且还必须是子节点
     val newArgs = mapProductIterator {
       case arg: TreeNode[_] if containsChild(arg) =>
         val newChild = f(arg.asInstanceOf[BaseType])
